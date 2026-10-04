@@ -1,0 +1,63 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="360dp"
+    android:height="640dp"
+    android:viewportWidth="360"
+    android:viewportHeight="640">
+
+    <!-- Sky gradient -->
+    <path
+        android:pathData="M0,0h360v640H0z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="270"
+                android:startColor="#FF090E18"
+                android:centerColor="#FF121A28"
+                android:endColor="#FF080A10"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+
+    <!-- Skyline silhouettes -->
+    <path
+        android:fillColor="#FF182232"
+        android:pathData="M20,240h28v120h-28zM54,200h35v160h-35zM96,250h24v110h-24zM130,170h40v190h-40zM180,220h30v140h-30zM220,190h38v170h-38zM268,230h32v130h-32zM310,210h30v150h-30z" />
+
+    <!-- Distant street & fog glow -->
+    <path
+        android:pathData="M0,320h360v320H0z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="270"
+                android:startColor="#22FFAA33"
+                android:endColor="#FF070A0F"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+
+    <!-- Road perspective -->
+    <path
+        android:fillColor="#FF0B0E14"
+        android:pathData="M140,360L0,640h360L220,360z" />
+
+    <!-- Road center dashed markings -->
+    <path
+        android:fillColor="#33FFAA00"
+        android:pathData="M178,390l-1,30h4l-1,-30z M176,440l-2,40h6l-2,-40z M174,500l-3,50h8l-3,-50z M172,570l-4,70h10l-4,-70z" />
+
+    <!-- Car Silhouette with glowing red taillights and headlights reflection -->
+    <path
+        android:fillColor="#FF151B24"
+        android:pathData="M145,510c5,-15 15,-20 35,-20s30,5 35,20l6,25c0,6 -5,10 -12,10h-58c-7,0 -12,-4 -12,-10z" />
+
+    <!-- Red Taillights -->
+    <path
+        android:fillColor="#FFFF2233"
+        android:pathData="M149,520h12v4h-12zM199,520h12v4h-12z" />
+
+    <!-- License plate glowing amber -->
+    <path
+        android:fillColor="#FFFFC857"
+        android:pathData="M173,525h14v5h-14z" />
+
+</vector>

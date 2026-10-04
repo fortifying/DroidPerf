@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple "performance graph" mark: three ascending bars inside the safe zone. -->
+    <path
+        android:fillColor="#FF7CFC00"
+        android:pathData="M36,70 h6 v-14 h-6 z" />
+    <path
+        android:fillColor="#FF7CFC00"
+        android:pathData="M48,70 h6 v-24 h-6 z" />
+    <path
+        android:fillColor="#FF7CFC00"
+        android:pathData="M60,70 h6 v-34 h-6 z" />
+</vector>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <corners android:radius="100dp" />
+    <solid android:color="@color/badge_root_bg" />
+    <stroke android:width="1.2dp" android:color="@color/badge_root_stroke" />
+    <padding android:left="8dp" android:top="3dp" android:right="8dp" android:bottom="3dp" />
+</shape>

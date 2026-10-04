@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <corners android:radius="16dp" />
+    <solid android:color="@color/surface_card_selected" />
+    <stroke android:width="1.5dp" android:color="@color/accent_green" />
+</shape>

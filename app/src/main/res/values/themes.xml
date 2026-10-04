@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.PerfOverlay" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorOnPrimary">@color/on_brand_primary</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorSurfaceVariant">@color/surface_card</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_muted</item>
+        <item name="colorOutline">@color/outline</item>
+        
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/surface</item>
+        <item name="android:navigationBarColor">@color/nav_bg</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
+
+        <!-- Controls tinting -->
+        <item name="colorControlActivated">@color/accent_green</item>
+        <item name="colorControlNormal">@color/on_surface_muted</item>
+        <item name="colorSwitchThumbNormal">@color/on_surface_muted</item>
+
+        <!-- Material 3 Slider -->
+        <item name="sliderStyle">@style/Widget.PerfOverlay.Slider</item>
+
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.PerfOverlay.BottomSheetDialog</item>
+    </style>
+
+    <style name="Widget.PerfOverlay.Slider" parent="Widget.Material3.Slider">
+        <item name="thumbColor">@color/accent_green</item>
+        <item name="trackColorActive">@color/accent_green</item>
+        <item name="trackColorInactive">@color/slider_track_inactive</item>
+        <item name="haloColor">#2600E5A3</item>
+        <item name="thumbRadius">9dp</item>
+        <item name="trackHeight">4dp</item>
+        <item name="thumbElevation">2dp</item>
+        <item name="labelStyle">@style/Widget.PerfOverlay.Tooltip</item>
+    </style>
+
+    <style name="Widget.PerfOverlay.Tooltip" parent="Widget.Material3.Tooltip">
+        <item name="backgroundTint">@color/surface_card_alt</item>
+        <item name="android:textColor">@color/accent_green</item>
+    </style>
+
+    <style name="ThemeOverlay.PerfOverlay.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.PerfOverlay.BottomSheet</item>
+    </style>
+
+    <style name="Widget.PerfOverlay.BottomSheet" parent="Widget.Material3.BottomSheet">
+        <item name="backgroundTint">@color/surface_card</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.PerfOverlay.BottomSheet</item>
+    </style>
+
+    <style name="ShapeAppearance.PerfOverlay.BottomSheet" parent="ShapeAppearance.Material3.Corner.None">
+        <item name="cornerSizeTopLeft">24dp</item>
+        <item name="cornerSizeTopRight">24dp</item>
+    </style>
+</resources>

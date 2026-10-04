@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_primary">#FF00E699</color>
+    <color name="on_brand_primary">#FF04120F</color>
+    <color name="surface">#FF090D14</color>
+    <color name="surface_card">#FF101722</color>
+    <color name="surface_card_alt">#FF151F2E</color>
+    <color name="surface_card_selected">#FF0D2420</color>
+    <color name="outline">#FF1C293A</color>
+    <color name="outline_light">#FF2A3C52</color>
+    <color name="on_surface">#FFF3F6F9</color>
+    <color name="on_surface_muted">#FF8295A8</color>
+    <color name="on_surface_faint">#FF4E6175</color>
+    
+    <!-- Accent colors -->
+    <color name="accent_green">#FF00E699</color>
+    <color name="accent_blue">#FF2979FF</color>
+    <color name="accent_red">#FFFF3B56</color>
+    <color name="accent_cyan">#FF00D2FF</color>
+    <color name="accent_purple">#FFB066FF</color>
+    <color name="accent_orange">#FFFFA726</color>
+    <color name="accent_yellow">#FFFFD600</color>
+    
+    <!-- Status -->
+    <color name="ok">#FF00E699</color>
+    <color name="missing">#FFFF4B5E</color>
+    <color name="warn">#FFFFA726</color>
+
+    <!-- Navigation -->
+    <color name="nav_bg">#FF080C12</color>
+    <color name="nav_active">#FF00E699</color>
+    <color name="nav_inactive">#FF607286</color>
+    <color name="nav_border">#FF16202C</color>
+
+    <!-- Badge -->
+    <color name="badge_root_bg">#FF0D241D</color>
+    <color name="badge_root_stroke">#FF00E699</color>
+    <color name="badge_shizuku_bg">#FF0E202B</color>
+    <color name="badge_shizuku_stroke">#FF00D2FF</color>
+    
+    <!-- Controls -->
+    <color name="slider_track_inactive">#FF1C2A3C</color>
+    <color name="slider_track_active">#FF00E699</color>
+</resources>

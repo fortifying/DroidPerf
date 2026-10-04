@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@color/surface"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Overlay" android:textStyle="bold" android:textSize="18sp" />
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginTop="8dp">
+            <TextView android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="Enabled" />
+            <Switch android:id="@+id/enabledSwitch"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="Compact mode" />
+            <Switch android:id="@+id/compactSwitch"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:text="Overlay style" />
+        <Spinner android:id="@+id/styleSpinner"
+            android:layout_width="match_parent" android:layout_height="wrap_content" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:text="Text size" />
+        <com.google.android.material.slider.Slider
+            android:id="@+id/textSizeSeek"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="7.0"
+            android:valueTo="28.0"
+            android:stepSize="1.0"
+            android:value="11.0" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Opacity" />
+        <com.google.android.material.slider.Slider
+            android:id="@+id/opacitySeek"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="10.0"
+            android:valueTo="100.0"
+            android:stepSize="1.0"
+            android:value="100.0" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:text="Update interval" />
+        <com.google.android.material.slider.Slider
+            android:id="@+id/intervalSeek"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0.0"
+            android:valueTo="19.0"
+            android:stepSize="1.0"
+            android:value="3.0" />
+        <TextView android:id="@+id/intervalLabel"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textSize="12sp" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:text="Preset" android:textStyle="bold"
+            android:textSize="18sp" />
+        <Spinner android:id="@+id/presetSpinner"
+            android:layout_width="match_parent" android:layout_height="wrap_content" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:text="Metrics" android:textStyle="bold"
+            android:textSize="18sp" />
+
+        <LinearLayout android:id="@+id/metricsContainer"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+    </LinearLayout>
+</ScrollView>
