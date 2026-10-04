@@ -1147,12 +1147,86 @@
                         </LinearLayout>
 
                         <TextView
+                            android:id="@+id/textAppVersion"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="8dp"
                             android:text="1.0.0"
                             android:textColor="@color/on_surface_muted"
                             android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="12dp"
+                        android:background="@color/surface_card_alt" />
+
+                    <!-- Check for Updates Row -->
+                    <LinearLayout
+                        android:id="@+id/rowCheckUpdates"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
+
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_icon_squircle">
+
+                            <ImageView
+                                android:id="@+id/iconCheckUpdates"
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_update"
+                                app:tint="@color/accent_cyan" />
+
+                            <ProgressBar
+                                android:id="@+id/progressCheckUpdates"
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:indeterminate="true"
+                                android:indeterminateTint="@color/accent_cyan"
+                                android:visibility="gone" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Check for updates"
+                                android:textColor="@color/on_surface"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/textUpdateStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:text="Tap to check GitHub releases"
+                                android:textColor="@color/on_surface_muted"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_chevron_right" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

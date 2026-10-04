@@ -1,4 +1,4 @@
-﻿package com.droidperf.ui
+package com.droidperf.ui
 
 import android.Manifest
 import android.content.Intent
@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -14,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.droidperf.BuildConfig
 import com.droidperf.R
 import com.droidperf.databinding.ActivityMainBinding
 import com.droidperf.di.ServiceLocator
@@ -22,6 +24,7 @@ import com.droidperf.domain.MetricsSnapshot
 import com.droidperf.domain.valueOrNull
 import com.droidperf.overlay.OverlayService
 import com.droidperf.settings.OverlayConfig
+import com.droidperf.update.UpdateChecker
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -249,6 +252,57 @@ class MainActivity : AppCompatActivity() {
 
         binding.rowDiagnostics.setOnClickListener {
             startActivity(Intent(this, DiagnosticsActivity::class.java))
+        }
+
+        binding.textAppVersion.text = BuildConfig.VERSION_NAME
+
+        binding.rowAbout.setOnClickListener {
+            checkAppUpdates()
+        }
+
+        binding.rowCheckUpdates.setOnClickListener {
+            checkAppUpdates()
+        }
+    }
+
+    private var isCheckingUpdates = false
+
+    private fun checkAppUpdates() {
+        if (isCheckingUpdates) return
+        isCheckingUpdates = true
+
+        binding.iconCheckUpdates.visibility = View.GONE
+        binding.progressCheckUpdates.visibility = View.VISIBLE
+        binding.textUpdateStatus.text = "Checking GitHub..."
+
+        lifecycleScope.launch {
+            val result = UpdateChecker.checkForUpdates()
+            isCheckingUpdates = false
+            binding.iconCheckUpdates.visibility = View.VISIBLE
+            binding.progressCheckUpdates.visibility = View.GONE
+
+            when (result) {
+                is UpdateChecker.CheckResult.UpdateAvailable -> {
+                    binding.textUpdateStatus.text = "Update available: ${result.release.tagName}"
+                    UpdateBottomSheet(this@MainActivity, result.release).show()
+                }
+                is UpdateChecker.CheckResult.UpToDate -> {
+                    binding.textUpdateStatus.text = "Up to date (v${result.currentVersion})"
+                    Toast.makeText(
+                        this@MainActivity,
+                        "DroidPerf is up to date (v${result.currentVersion})",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                is UpdateChecker.CheckResult.Error -> {
+                    binding.textUpdateStatus.text = "Check failed"
+                    Toast.makeText(
+                        this@MainActivity,
+                        result.message,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         }
     }
 
