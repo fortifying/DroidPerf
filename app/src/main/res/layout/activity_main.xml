@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,9 +17,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- ========================================== -->
-        <!-- TAB 1: MONITOR (Screens 1 & 2 in concep.png) -->
-        <!-- ========================================== -->
+        <!-- Tab 1: Monitor -->
         <ScrollView
             android:id="@+id/tabMonitorScroll"
             android:layout_width="match_parent"
@@ -84,9 +83,9 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="4dp"
-                                android:text="Qualcomm Adreno"
                                 android:textColor="@color/on_surface_muted"
-                                android:textSize="11sp" />
+                                android:textSize="11sp"
+                                tools:text="GPU" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -108,9 +107,9 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="4dp"
-                                android:text="qcom (UKEE)"
                                 android:textColor="@color/on_surface_muted"
-                                android:textSize="11sp" />
+                                android:textSize="11sp"
+                                tools:text="SoC" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -384,9 +383,7 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- ========================================== -->
-        <!-- TAB 2: OVERLAY (Screen 3 in concep.png)     -->
-        <!-- ========================================== -->
+        <!-- Tab 2: Overlay -->
         <ScrollView
             android:id="@+id/tabOverlayScroll"
             android:layout_width="match_parent"
@@ -768,9 +765,7 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- ========================================== -->
-        <!-- TAB 3: SETTINGS (Screen 4 in concep.png)    -->
-        <!-- ========================================== -->
+        <!-- Tab 3: Settings -->
         <ScrollView
             android:id="@+id/tabSettingsScroll"
             android:layout_width="match_parent"
@@ -1243,7 +1238,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- Sleek Bottom Navigation Bar matching concep.png -->
+    <!-- Bottom Navigation Bar -->
     <LinearLayout
         android:id="@+id/bottomNavBar"
         android:layout_width="0dp"

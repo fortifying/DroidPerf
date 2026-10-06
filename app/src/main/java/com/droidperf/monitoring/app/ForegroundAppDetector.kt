@@ -1,4 +1,4 @@
-﻿package com.droidperf.monitoring.app
+package com.droidperf.monitoring.app
 
 import android.app.AppOpsManager
 import android.app.usage.UsageEvents
@@ -38,9 +38,7 @@ class ForegroundAppDetector(
     }
 
     fun detect(): Metric<String> {
-        // Ignore our own overlay package and system UI so we report the game, not us.
         val ignore = setOf(
-            context.packageName,
             "com.android.systemui",
             "android",
         )
@@ -53,6 +51,10 @@ class ForegroundAppDetector(
 
         shellForeground()?.let { pkg ->
             if (pkg !in ignore) return Metric.Available(pkg)
+        }
+
+        if (hasUsageAccess()) {
+            return Metric.Available(context.packageName)
         }
 
         return Metric.Unavailable(

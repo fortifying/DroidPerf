@@ -1,4 +1,4 @@
-﻿package com.droidperf.monitoring.fps
+package com.droidperf.monitoring.fps
 
 import android.os.SystemClock
 import com.droidperf.domain.Metric
@@ -44,17 +44,35 @@ class FpsMonitor(private val shellProvider: () -> Shell?) {
     @Volatile
     private var lastClearElapsedMs = 0L
 
-    /** Resolve the SurfaceFlinger layer that belongs to [pkg]. */
-    private fun findLayer(shell: Shell, pkg: String): String? {
+    /** Resolve the active render SurfaceFlinger layer that belongs to [pkg], or topmost window if [pkg] is null. */
+    private fun findLayer(shell: Shell, pkg: String?): String? {
         val res = shell.exec(SafeCommands.SF_LAYER_LIST) ?: return null
         if (!res.ok) return null
-        // Layer names look like "SurfaceView[com.pkg/Activity]#0" or, on Android 12+,
-        // "SurfaceView[com.pkg/Activity]#0(BLAST)". Prefer a SurfaceView layer (games
-        // render there), else any layer for the package. Lines are trimmed because some
-        // shells leave a trailing CR on every line.
-        val candidates = res.stdout.map { it.trim() }.filter { it.contains(pkg) }
-        val surfaceView = candidates.firstOrNull { it.contains("SurfaceView") }
-        val chosen = surfaceView ?: candidates.firstOrNull()
+        val lines = res.stdout.map { it.trim() }
+            .filter { line ->
+                line.isNotEmpty() &&
+                    !line.contains("Background for") &&
+                    !line.contains("ActivityRecord") &&
+                    !line.contains("Dim layer") &&
+                    !line.contains("leash") &&
+                    !line.contains("SnapshotStartingWindow") &&
+                    !line.contains("Overlay") &&
+                    !line.contains("Toast") &&
+                    !line.contains("InputMethod") &&
+                    !line.contains("NavigationBar") &&
+                    !line.contains("StatusBar")
+            }
+        val candidates = if (pkg != null) {
+            val matching = lines.filter { it.contains(pkg) }
+            if (matching.isNotEmpty()) matching else lines
+        } else {
+            lines
+        }
+        val blastSurfaceView = candidates.lastOrNull { it.contains("SurfaceView") && it.contains("BLAST") }
+        val surfaceView = candidates.lastOrNull { it.contains("SurfaceView") }
+        val blast = candidates.lastOrNull { it.contains("BLAST") || it.contains("BBQ") }
+        val appWindow = candidates.lastOrNull { it.contains("/") }
+        val chosen = blastSurfaceView ?: surfaceView ?: blast ?: appWindow ?: candidates.lastOrNull()
         return chosen?.takeIf { SafeCommands.isSafeLayerName(it) }
     }
 
@@ -72,16 +90,12 @@ class FpsMonitor(private val shellProvider: () -> Shell?) {
                 "none",
             )
 
-        if (pkg == null || !SafeCommands.isSafePackageName(pkg)) {
-            return Fps(
-                Metric.Unavailable("no valid foreground package to measure"),
-                Metric.Unavailable("no valid foreground package to measure"),
-                "none",
-            )
-        }
+        val targetPkg = pkg?.takeIf { SafeCommands.isSafePackageName(it) }
 
-        // 1. SurfaceFlinger latency for the resolved layer.
-        findLayer(shell, pkg)?.let { layer ->
+        // SurfaceFlinger latency for the resolved layer.
+        val layer = findLayer(shell, targetPkg)
+
+        if (layer != null) {
             val res = shell.exec(SafeCommands.layerLatency(layer))
             if (res != null && res.ok) {
                 FrameLatencyParser.parse(res.stdout)?.let { r ->
@@ -95,24 +109,26 @@ class FpsMonitor(private val shellProvider: () -> Shell?) {
             }
         }
 
-        // 2. SurfaceFlinger timestats (the working source on Android 14+/HyperOS).
-        timestatsFps(shell, pkg)?.let { return it }
+        // SurfaceFlinger timestats for Android 14+ / HyperOS.
+        timestatsFps(shell, targetPkg)?.let { return it }
 
-        // 3. gfxinfo framestats fallback.
-        val gfx = shell.exec(SafeCommands.gfxInfoFramestats(pkg))
-        if (gfx != null && gfx.ok) {
-            FrameStatsParser.parse(gfx.stdout)?.let { r ->
-                return Fps(
-                    Metric.Available(round1(r.fps)),
-                    Metric.Available(round1(r.frameTimeMs)),
-                    "gfxinfo framestats: $pkg",
-                )
+        // gfxinfo framestats fallback.
+        if (targetPkg != null) {
+            val gfx = shell.exec(SafeCommands.gfxInfoFramestats(targetPkg))
+            if (gfx != null && gfx.ok) {
+                FrameStatsParser.parse(gfx.stdout)?.let { r ->
+                    return Fps(
+                        Metric.Available(round1(r.fps)),
+                        Metric.Available(round1(r.frameTimeMs)),
+                        "gfxinfo framestats: $targetPkg",
+                    )
+                }
             }
         }
 
         return Fps(
-            Metric.Unavailable("frame statistics not readable for $pkg on this device/access level"),
-            Metric.Unavailable("frame statistics not readable for $pkg on this device/access level"),
+            Metric.Unavailable("no frames in the current sample window"),
+            Metric.Unavailable("no frames in the current sample window"),
             "none",
         )
     }
@@ -125,7 +141,7 @@ class FpsMonitor(private val shellProvider: () -> Shell?) {
      * start a fresh window and return null for this tick instead of reporting an
      * average accumulated over an unknown period.
      */
-    private fun timestatsFps(shell: Shell, pkg: String): Fps? {
+    private fun timestatsFps(shell: Shell, pkg: String?): Fps? {
         val now = SystemClock.elapsedRealtime()
         val stale = lastClearElapsedMs == 0L || now - lastClearElapsedMs > STALE_WINDOW_MS
 
@@ -173,3 +189,62 @@ class FpsMonitor(private val shellProvider: () -> Shell?) {
 
     private fun round1(v: Double) = kotlin.math.round(v * 10.0) / 10.0
 }
+
+/**
+ * Rolling statistics over the FPS monitor's per-window samples, powering the RTSS-style
+ * overlay's "FPS Average" and "1% Lows" rows.
+ *
+ * Each sample is the average presented-frame rate over one sampling window (≈ the
+ * overlay interval, default 1 s) as reported by SurfaceFlinger. Statistics therefore
+ * have one-second resolution, not per-frame resolution: "1% Lows" is the average of the
+ * slowest ~1% of window samples over the history below, which is the honest equivalent
+ * at this sampling granularity — it is never interpolated or scaled.
+ *
+ * The buffer is cleared whenever the measured foreground app changes, so averages never
+ * mix two applications. Nothing here allocates per frame; it is O(1) per sample.
+ */
+class FpsStatsTracker(private val maxSamples: Int = DEFAULT_MAX_SAMPLES) {
+
+    private val samples = ArrayDeque<Double>(maxSamples)
+
+    /** Drop all history (e.g. the measured app changed). */
+    fun clear() = samples.clear()
+
+    /** Record one window average. Non-positive values are ignored, never fabricated. */
+    fun feed(fps: Double) {
+        if (!fps.isFinite() || fps <= 0.0) return
+        if (samples.size >= maxSamples) samples.removeFirst()
+        samples.addLast(fps)
+    }
+
+    /** Mean of the history, or null before [MIN_FOR_AVERAGE] samples exist. */
+    fun average(): Double? {
+        if (samples.size < MIN_FOR_AVERAGE) return null
+        var sum = 0.0
+        for (v in samples) sum += v
+        return sum / samples.size
+    }
+
+    /**
+     * Average of the slowest ~1% of samples, or null before [MIN_FOR_LOW] samples exist.
+     * At least one sample always counts, matching the "worst 1%" convention.
+     */
+    fun onePercentLow(): Double? {
+        if (samples.size < MIN_FOR_LOW) return null
+        val count = maxOf(1, (samples.size * 0.01).toInt().coerceAtLeast(1))
+        val worst = samples.sorted().take(count)
+        var sum = 0.0
+        for (v in worst) sum += v
+        return sum / count
+    }
+
+    fun sampleCount(): Int = samples.size
+
+    private companion object {
+        /** ~10 minutes of history at the default 1 s interval. */
+        const val DEFAULT_MAX_SAMPLES = 600
+        const val MIN_FOR_AVERAGE = 3
+        const val MIN_FOR_LOW = 30
+    }
+}
+

@@ -1,4 +1,4 @@
-﻿package com.droidperf.ui
+package com.droidperf.ui
 
 import android.app.Activity
 import android.content.Intent
@@ -61,7 +61,6 @@ class ElevatedAccessBottomSheet(
         val isShizukuInstalled = shizuku.isInstalled()
         val hasElevated = isRooted || isShizukuPermitted
 
-        // 1. Shizuku Card UI
         when {
             isShizukuPermitted -> {
                 binding.shizukuStatusDot.setBackgroundResource(R.drawable.bg_dot_running)
@@ -101,7 +100,6 @@ class ElevatedAccessBottomSheet(
             }
         }
 
-        // 2. Root Card UI
         if (isRooted) {
             binding.rootStatusDot.setBackgroundResource(R.drawable.bg_dot_running)
             binding.rootStatusText.text = "Root Access Granted"
@@ -120,7 +118,6 @@ class ElevatedAccessBottomSheet(
             binding.btnRootAction.isEnabled = true
         }
 
-        // 3. Bottom START OVERLAY Button
         binding.btnElevatedStart.isEnabled = true
         binding.btnElevatedStart.text = "START OVERLAY"
         if (hasElevated) {

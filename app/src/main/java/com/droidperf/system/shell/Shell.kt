@@ -1,12 +1,8 @@
-﻿package com.droidperf.system.shell
+package com.droidperf.system.shell
 
 import com.droidperf.domain.AccessLevel
+import java.io.BufferedReader
 
-/**
- * Result of a shell command. We keep exit code and both streams so callers can tell a
- * genuine "not supported here" apart from an actual error, and never treat empty output
- * as a real zero.
- */
 data class ShellResult(
     val exitCode: Int,
     val stdout: List<String>,
@@ -15,13 +11,55 @@ data class ShellResult(
     val ok: Boolean get() = exitCode == 0
 }
 
-/**
- * Executes a *fixed, app-owned* command. The command allow-list lives in
- * [SafeCommands]; nothing else may be passed here, which is what keeps this a
- * monitoring tool rather than an arbitrary code execution surface.
- */
 interface Shell {
     val accessLevel: AccessLevel
-    fun exec(command: String): ShellResult?
     fun isAvailable(): Boolean
+    fun exec(command: String): ShellResult?
+}
+
+/**
+ * Runs a command as the app's own UID. Baseline unprivileged shell.
+ */
+class StandardShell : Shell {
+    override val accessLevel = AccessLevel.STANDARD
+
+    override fun isAvailable(): Boolean = true
+
+    override fun exec(command: String): ShellResult? = try {
+        val process = ProcessBuilder("/system/bin/sh", "-c", command)
+            .redirectErrorStream(false)
+            .start()
+        try {
+            process.outputStream.close()
+            val stdout = readAll(process.inputStream.bufferedReader())
+            val stderr = readAll(process.errorStream.bufferedReader())
+            val code = process.waitFor()
+            ShellResult(code, stdout, stderr)
+        } finally {
+            process.destroy()
+        }
+    } catch (_: Throwable) {
+        null
+    }
+
+    private fun readAll(reader: BufferedReader): List<String> =
+        reader.useLines { it.toList() }
+}
+
+/**
+ * Runs commands with the ADB shell identity (UID 2000) via Shizuku.
+ */
+class ShizukuShell : Shell {
+    override val accessLevel = AccessLevel.SHIZUKU
+
+    private var processFactory: ((String) -> ShellResult?)? = null
+
+    fun bind(factory: (String) -> ShellResult?) {
+        processFactory = factory
+    }
+
+    override fun isAvailable(): Boolean = processFactory != null
+
+    override fun exec(command: String): ShellResult? =
+        processFactory?.invoke(command)
 }

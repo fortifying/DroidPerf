@@ -1,4 +1,4 @@
-﻿package com.droidperf.ui
+package com.droidperf.ui
 
 import android.animation.ValueAnimator
 import android.content.Context
@@ -117,17 +117,14 @@ class CircularGaugeView @JvmOverloads constructor(
         super.onDraw(canvas)
         if (radius <= 0f) return
 
-        // 1. Draw perfectly circular background track
         canvas.drawCircle(centerX, centerY, radius, trackPaint)
 
-        // 2. Draw foreground circular sweep arc starting from top (-90 degrees)
         arcPaint.color = arcColor
         val sweepAngle = (progressPercent / 100f) * 360f
         if (sweepAngle > 0.5f) {
             canvas.drawArc(bounds, -90f, sweepAngle, false, arcPaint)
         }
 
-        // 3. Draw center label and value
         val labelY = centerY - dp(5f)
         val valueY = centerY + dp(12f)
         canvas.drawText(labelText, centerX, labelY, labelPaint)

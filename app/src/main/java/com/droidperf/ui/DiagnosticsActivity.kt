@@ -1,4 +1,4 @@
-﻿package com.droidperf.ui
+package com.droidperf.ui
 
 import android.os.Build
 import android.os.Bundle
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Diagnostics screen matching screen 5 in concep.png:
+ * Diagnostics screen:
  * SYSTEM info, ACCESS status, and MONITORING sources with live telemetry.
  */
 class DiagnosticsActivity : AppCompatActivity() {
@@ -30,12 +30,29 @@ class DiagnosticsActivity : AppCompatActivity() {
 
         binding.btnDiagBack.setOnClickListener { finish() }
 
+        bindDeviceIdentity()
         refresh()
+    }
+
+    private fun bindDeviceIdentity() {
+        val metrics = ServiceLocator.metrics
+        binding.diagAndroidVersion.text = "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
+        val mfg = Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
+        val model = Build.MODEL
+        binding.diagDevice.text = if (model.startsWith(mfg, ignoreCase = true)) model else "$mfg $model"
+        binding.diagSoc.text = metrics.socDescription().ifBlank {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && Build.SOC_MODEL.isNotBlank()) {
+                "${Build.SOC_MODEL} (${Build.HARDWARE})"
+            } else {
+                Build.HARDWARE.ifBlank { Build.BOARD.ifBlank { "Generic SoC" } }
+            }
+        }
+        binding.diagGpu.text = metrics.gpuModelName()
     }
 
     private fun refresh() {
         lifecycleScope.launch {
-            withContext(Dispatchers.Default) {
+            withContext(Dispatchers.IO) {
                 ServiceLocator.metrics.refreshCapabilities()
                 ServiceLocator.metrics.sample(
                     includeNetwork = ServiceLocator.settings.current().networkEnabled,
@@ -52,10 +69,7 @@ class DiagnosticsActivity : AppCompatActivity() {
         val settings = ServiceLocator.settings.current()
 
         // SYSTEM
-        binding.diagAndroidVersion.text = "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
-        binding.diagDevice.text = "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}"
-        binding.diagSoc.text = metrics.socDescription().ifBlank { "Qualcomm Snapdragon" }
-        binding.diagGpu.text = metrics.gpuVendor().displayName
+        bindDeviceIdentity()
         val ramTotal = snap.ramTotalBytes.valueOrNull()
         binding.diagRam.text = if (ramTotal != null) {
             "%.0f GB".format(ramTotal / 1_073_741_824.0)
@@ -84,7 +98,10 @@ class DiagnosticsActivity : AppCompatActivity() {
         // MONITORING
         binding.diagFpsSource.text = snap.fpsSource.ifBlank { "SurfaceFlinger" }
         binding.diagCpuSource.text = "/proc/stat"
-        binding.diagGpuSource.text = "${metrics.gpuVendor().displayName} (perf)"
+        val gpuLabel = metrics.gpuVendor().displayName.takeIf { it != "Unknown" }
+            ?: metrics.gpuModelName().takeIf { it != "Unknown" }
+            ?: "GPU"
+        binding.diagGpuSource.text = "$gpuLabel (perf)"
         binding.diagRamSource.text = "/proc/meminfo"
         binding.diagSamplingInterval.text = "${settings.sampleIntervalMs / 1000.0}s"
     }

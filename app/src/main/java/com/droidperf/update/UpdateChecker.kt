@@ -1,5 +1,7 @@
 package com.droidperf.update
 
+import android.text.Html
+import android.text.Spanned
 import com.droidperf.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,6 +11,17 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+
+data class AppRelease(
+    val tagName: String,
+    val versionName: String,
+    val title: String,
+    val changelog: String,
+    val htmlUrl: String,
+    val downloadUrl: String,
+    val apkFileName: String? = null,
+    val apkSizeBytes: Long? = null
+)
 
 object UpdateChecker {
 
@@ -26,7 +39,6 @@ object UpdateChecker {
         currentVersion: String = BuildConfig.VERSION_NAME
     ): CheckResult = withContext(Dispatchers.IO) {
         try {
-            // First attempt: /releases/latest
             val (statusCode, responseBody) = executeHttpGet(API_LATEST_URL)
 
             val releaseJson = when {
@@ -34,7 +46,6 @@ object UpdateChecker {
                     JSONObject(responseBody)
                 }
                 statusCode == 404 -> {
-                    // /releases/latest returns 404 if there are only pre-releases or no releases yet.
                     val (listCode, listBody) = executeHttpGet(API_RELEASES_LIST_URL)
                     if (listCode == 200 && listBody != null) {
                         val array = JSONArray(listBody)
@@ -177,3 +188,68 @@ object UpdateChecker {
         return false
     }
 }
+
+object MarkdownFormatter {
+
+    fun format(markdown: String?): Spanned {
+        if (markdown.isNullOrBlank()) {
+            return Html.fromHtml("<i>No release notes provided.</i>", Html.FROM_HTML_MODE_COMPACT)
+        }
+
+        val sb = StringBuilder()
+        val lines = markdown.lines()
+
+        for (line in lines) {
+            val trimmed = line.trim()
+            when {
+                trimmed.startsWith("### ") -> {
+                    sb.append("<br/><b><font color='#00E699'>")
+                        .append(escape(trimmed.removePrefix("### ").trim()))
+                        .append("</font></b><br/>")
+                }
+                trimmed.startsWith("## ") -> {
+                    sb.append("<br/><b><font color='#00E699'>")
+                        .append(escape(trimmed.removePrefix("## ").trim()))
+                        .append("</font></b><br/>")
+                }
+                trimmed.startsWith("# ") -> {
+                    sb.append("<br/><b><font color='#00E699'>")
+                        .append(escape(trimmed.removePrefix("# ").trim()))
+                        .append("</font></b><br/>")
+                }
+                trimmed.startsWith("* ") || trimmed.startsWith("- ") -> {
+                    val content = trimmed.substring(2).trim()
+                    sb.append("&bull;&nbsp;&nbsp;")
+                        .append(formatInline(content))
+                        .append("<br/>")
+                }
+                trimmed.isBlank() -> {
+                    sb.append("<br/>")
+                }
+                else -> {
+                    sb.append(formatInline(trimmed))
+                        .append("<br/>")
+                }
+            }
+        }
+
+        return Html.fromHtml(sb.toString(), Html.FROM_HTML_MODE_COMPACT)
+    }
+
+    private fun formatInline(text: String): String {
+        var str = escape(text)
+        str = str.replace(Regex("\\*\\*(.+?)\\*\\*"), "<b>$1</b>")
+        str = str.replace(Regex("__(.+?)__"), "<b>$1</b>")
+        str = str.replace(Regex("`(.+?)`"), "<font color='#00D2FF'><tt>$1</tt></font>")
+        return str
+    }
+
+    private fun escape(text: String): String {
+        return text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#39;")
+    }
+}
+

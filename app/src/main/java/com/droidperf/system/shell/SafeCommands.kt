@@ -1,4 +1,4 @@
-﻿package com.droidperf.system.shell
+package com.droidperf.system.shell
 
 /**
  * The complete set of commands this app is ever allowed to run. Centralizing them here
@@ -35,6 +35,9 @@ object SafeCommands {
     const val SF_TIMESTATS_DUMP = "dumpsys SurfaceFlinger --timestats -dump"
     const val SF_TIMESTATS_CLEAR = "dumpsys SurfaceFlinger --timestats -clear"
     const val SF_TIMESTATS_DISABLE = "dumpsys SurfaceFlinger --timestats -disable"
+
+    /** Android standard Thermal HAL service (Android 10+). */
+    const val THERMAL_SERVICE = "dumpsys thermalservice"
 
     /** CPU frequency snapshot across all cores. */
     const val CPU_FREQ =
@@ -105,6 +108,8 @@ object SafeCommands {
         Regex("""dumpsys SurfaceFlinger --timestats -dump"""),
         Regex("""dumpsys SurfaceFlinger --timestats -clear"""),
         Regex("""dumpsys SurfaceFlinger --timestats -disable"""),
+        // Android Thermal HAL service
+        Regex("""dumpsys thermalservice"""),
         // Per-process frame stats
         Regex("""dumpsys gfxinfo '[A-Za-z0-9._\-]{1,200}' framestats"""),
         // Read-only sysfs/proc snapshots

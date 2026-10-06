@@ -1,4 +1,4 @@
-﻿package com.droidperf.overlay
+package com.droidperf.overlay
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -299,10 +299,8 @@ class OverlayView(
 
                     var y = padV - rtssFillPaint.fontMetrics.ascent
                     for (row in rtssRows) {
-                        // 1. Draw Label
                         drawOutlinedText(canvas, row.label, padH, y, row.labelColor, rtssFillPaint, rtssStrokePaint)
 
-                        // 2. Draw Stats in their respective column slots
                         for (stat in row.stats) {
                             val colStartX = when (stat.slot) {
                                 0 -> padH + labelColWidth

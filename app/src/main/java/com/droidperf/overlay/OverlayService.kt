@@ -1,4 +1,4 @@
-﻿package com.droidperf.overlay
+package com.droidperf.overlay
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -209,7 +209,7 @@ class OverlayService : Service() {
         val settings = ServiceLocator.settings
         val metrics = ServiceLocator.metrics
 
-        samplingJob = scope.launch {
+        samplingJob = scope.launch(Dispatchers.IO) {
             while (isActive) {
                 val cfg = settings.current()
                 if (cfg.enabled) {

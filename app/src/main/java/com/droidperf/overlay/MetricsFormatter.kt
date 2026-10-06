@@ -1,4 +1,4 @@
-﻿package com.droidperf.overlay
+package com.droidperf.overlay
 
 import com.droidperf.domain.Metric
 import com.droidperf.domain.MetricsSnapshot
@@ -353,7 +353,7 @@ object MetricsFormatter {
     const val COLOR_LOW = 0xFFEF9A9A.toInt()
     const val COLOR_NA = COLOR_RTSS_NA
 
-    // Modern HUD colors matching concep.png
+    // Modern HUD color tokens
     const val COLOR_FPS_MODERN = 0xFF00E699.toInt()  // Emerald green
     const val COLOR_CPU_MODERN = 0xFF00D2FF.toInt()  // Cyan
     const val COLOR_GPU_MODERN = 0xFFB066FF.toInt()  // Violet

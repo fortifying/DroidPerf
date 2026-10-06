@@ -1,4 +1,4 @@
-﻿package com.droidperf.monitoring
+package com.droidperf.monitoring
 
 import android.content.Context
 import com.droidperf.di.ServiceLocator
@@ -27,9 +27,11 @@ import com.droidperf.system.shell.RootShell
 import com.droidperf.system.shell.Shell
 import com.droidperf.system.shell.ShizukuShell
 import com.droidperf.system.shell.StandardShell
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 
 /**
  * The single place that decides which access level is in force, then samples every
@@ -45,7 +47,7 @@ class MetricsRepository(private val context: Context) {
     private val cpu = CpuMonitor()
     private val ram = RamMonitor(context)
     private val battery = BatteryMonitor(context)
-    private val thermal = ThermalMonitor(context)
+    private val thermal = ThermalMonitor(context) { privilegedSysShell() }
     private val gpu = GpuMonitor()
     private val display = DisplayMonitor(context)
     private val network = NetworkMonitor()
@@ -173,6 +175,7 @@ class MetricsRepository(private val context: Context) {
     fun hasUsageAccess(): Boolean = foreground.hasUsageAccess()
     fun socDescription(): String = capabilityDetector.socDescription()
     fun gpuVendor(): GpuVendor = gpu.vendor
+    fun gpuModelName(): String = gpu.modelName
 
     /** Release device-global collection state (SurfaceFlinger timestats). */
     fun shutdown() {
@@ -183,7 +186,7 @@ class MetricsRepository(private val context: Context) {
      * Collect one snapshot across every metric. Called on a schedule by the service.
      * Each metric is sampled in isolation so a single failure stays local.
      */
-    suspend fun sample(includeNetwork: Boolean, includeLatency: Boolean) {
+    suspend fun sample(includeNetwork: Boolean, includeLatency: Boolean) = withContext(Dispatchers.IO) {
         val level = activeAccessLevel()
 
         val usage = runCatching { cpu.sampleUsage() }.getOrNull()

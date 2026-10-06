@@ -162,7 +162,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupMonitorTab() {
         binding.headerGpuText.text = viewModel.gpuVendorName()
-        binding.headerSocText.text = viewModel.socDescription().ifBlank { "qcom (UKEE)" }
+        binding.headerSocText.text = viewModel.socDescription().ifBlank {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && android.os.Build.SOC_MODEL.isNotBlank()) {
+                "${android.os.Build.SOC_MODEL} (${android.os.Build.HARDWARE})"
+            } else {
+                android.os.Build.HARDWARE.ifBlank { android.os.Build.BOARD.ifBlank { "Generic SoC" } }
+            }
+        }
 
         binding.btnToggleOverlay.setOnClickListener {
             val enable = !viewModel.config.value.enabled
@@ -464,7 +470,13 @@ class MainActivity : AppCompatActivity() {
 
         // Device chip info
         binding.headerGpuText.text = viewModel.gpuVendorName()
-        binding.headerSocText.text = viewModel.socDescription().ifBlank { "qcom (UKEE)" }
+        binding.headerSocText.text = viewModel.socDescription().ifBlank {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && android.os.Build.SOC_MODEL.isNotBlank()) {
+                "${android.os.Build.SOC_MODEL} (${android.os.Build.HARDWARE})"
+            } else {
+                android.os.Build.HARDWARE.ifBlank { android.os.Build.BOARD.ifBlank { "Generic SoC" } }
+            }
+        }
     }
 
     override fun onResume() {

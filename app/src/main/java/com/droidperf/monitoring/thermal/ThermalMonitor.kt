@@ -1,25 +1,33 @@
-﻿package com.droidperf.monitoring.thermal
+package com.droidperf.monitoring.thermal
 
 import android.content.Context
 import android.os.Build
 import android.os.HardwarePropertiesManager
 import com.droidperf.domain.Metric
 import com.droidperf.system.SysFs
+import com.droidperf.system.shell.SafeCommands
+import com.droidperf.system.shell.Shell
+import java.util.regex.Pattern
 
 /**
- * Thermal monitoring.
+ * Thermal monitoring across all Android devices.
  *
- * Two independent sources are probed, in order of reliability:
+ * Three independent sources are probed, in order of reliability:
  *
- *  1. HardwarePropertiesManager: the official API. On most devices it throws
- *     SecurityException for normal apps (it is gated behind DEVICE_POWER), so it is
- *     probed and used only when it genuinely returns data.
+ *  1. Android Thermal HAL service (`dumpsys thermalservice`) via privileged shell (Android 10+).
+ *     Provides official normalized thermal telemetry across CPU, GPU, Battery, and Skin.
  *
- *  2. /sys/class/thermal/thermal_zone*: raw kernel zones. Indices are NOT stable across
- *     devices, so we classify each zone by its "type" label and only report a metric
- *     when a label confidently matches. Unmatched zones are never guessed.
+ *  2. HardwarePropertiesManager: the official Android framework API.
+ *     Used when permitted without SecurityException.
+ *
+ *  3. /sys/class/thermal/thermal_zone*: raw kernel thermal zones.
+ *     Classifies zones by type label (SoC, CPU, GPU, Battery, Device) and filters out
+ *     Qualcomm mitigation step trip points and PMIC/charge readings.
  */
-class ThermalMonitor(private val context: Context) {
+class ThermalMonitor(
+    private val context: Context,
+    private val shellProvider: () -> Shell? = { null },
+) {
 
     data class Temps(
         val cpu: Metric<Double>,
@@ -30,21 +38,58 @@ class ThermalMonitor(private val context: Context) {
 
     private data class ZoneEntry(val name: String, val type: String)
     private data class Zone(val type: String, val tempC: Double)
+    private data class HwTemps(
+        val cpu: Double?, val gpu: Double?, val device: Double?, val battery: Double?,
+    )
 
-    /** Cache zone name to type mapping once, as sysfs thermal zone types do not change. */
-    private val cachedZones: List<ZoneEntry> by lazy {
+    companion object {
+        // Pattern from Android Thermal HAL:
+        // Temperature{mValue=42.5, mType=0, mName=cpu0-gold-usr, mStatus=0}
+        private val THERMAL_SERVICE_PATTERN = Pattern.compile(
+            """Temperature\{mValue=([0-9.]+),\s*mType=(\d+),\s*mName=([^,}]+)(?:,\s*mStatus=(\d+))?"""
+        )
+
+        private const val TYPE_CPU = 0
+        private const val TYPE_GPU = 1
+        private const val TYPE_BATTERY = 2
+        private const val TYPE_SKIN = 3
+        private const val TYPE_SOC = 10
+        private const val TYPE_SOC_AIDL = 13
+    }
+
+    @Volatile
+    private var cachedZones: List<ZoneEntry>? = null
+
+    private fun getZones(): List<ZoneEntry> {
+        val current = cachedZones
+        if (!current.isNullOrEmpty()) return current
         val base = "/sys/class/thermal"
-        SysFs.listDir(base)
+        val zones = SysFs.listDir(base)
             .filter { it.startsWith("thermal_zone") }
             .mapNotNull { name ->
-                val type = SysFs.readText("$base/$name/type") ?: return@mapNotNull null
-                ZoneEntry(name, type.lowercase())
+                val type = SysFs.readText("$base/$name/type")?.lowercase()?.trim() ?: return@mapNotNull null
+                if (isExcludedZone(type)) return@mapNotNull null
+                ZoneEntry(name, type)
             }
+        if (zones.isNotEmpty()) {
+            cachedZones = zones
+        }
+        return zones
+    }
+
+    private fun isExcludedZone(type: String): Boolean {
+        // Exclude Qualcomm trip point step files (e.g. cpu-1-step, gpu-step)
+        if (type.endsWith("-step") || type.contains("-step-") || type.contains("avg-step") || type.contains("max-step")) return true
+        // Standalone "soc" without thermal/max/temp is battery State of Charge (%)
+        if (type == "soc" || type == "soc-step" || (type.startsWith("soc") && !type.contains("thermal") && !type.contains("max") && !type.contains("temp") && !type.contains("cpu"))) return true
+        // Exclude battery charging & PMIC limits
+        if (type.contains("pmic") || type.contains("vbat") || type.contains("ibat") || type.contains("bcl")) return true
+        return false
     }
 
     private fun readTemperatures(): List<Zone> {
         val base = "/sys/class/thermal"
-        return cachedZones.mapNotNull { entry ->
+        return getZones().mapNotNull { entry ->
             val raw = SysFs.readLong("$base/${entry.name}/temp") ?: return@mapNotNull null
             val c = if (raw > 1000) raw / 1000.0 else raw.toDouble()
             if (c in -30.0..150.0) Zone(entry.type, c) else null
@@ -52,26 +97,71 @@ class ThermalMonitor(private val context: Context) {
     }
 
     fun sample(): Temps {
-        val zones = readTemperatures()
-
-        val cpu = matchZone(zones, listOf("cpu", "soc_thermal", "ap", "big", "little", "cluster"))
-        val gpu = matchZone(zones, listOf("gpu", "kgsl", "gpuss", "mali"))
-        val battery = matchZone(zones, listOf("batt", "battery"))
-        val device = matchZone(zones, listOf("skin", "board", "pa", "quiet", "device"))
-
-        // HardwarePropertiesManager as a cross-check / primary when permitted.
+        val halTemps = readThermalHal()
         val hw = hardwarePropertiesTemps()
+        val zones = readTemperatures()
+        val cpuZone = matchZone(zones, listOf("cpu", "soc_max", "soc_thermal", "soc-thermal", "ap", "ap_thermal", "tsens", "mtktscpu", "mtktsap", "cluster", "cortex", "kryo", "big", "little"))
+        val gpuZone = matchZone(zones, listOf("gpu", "kgsl", "gpuss", "mali", "sgpu", "g3d"))
+        val batteryZone = matchZone(zones, listOf("batt", "battery", "bms"))
+        val deviceZone = matchZone(zones, listOf("skin", "board", "pa", "quiet", "device"))
 
         return Temps(
-            cpu = prefer(hw?.cpu, cpu),
-            gpu = prefer(hw?.gpu, gpu),
-            device = prefer(hw?.device, device),
-            battery = prefer(hw?.battery, battery),
+            cpu = prefer(halTemps?.cpu, prefer(hw?.cpu, cpuZone)),
+            gpu = prefer(halTemps?.gpu, prefer(hw?.gpu, gpuZone)),
+            device = prefer(halTemps?.device, prefer(hw?.device, deviceZone)),
+            battery = prefer(halTemps?.battery, prefer(hw?.battery, batteryZone)),
         )
     }
 
+    private fun readThermalHal(): HwTemps? {
+        val shell = shellProvider() ?: return null
+        val res = shell.exec(SafeCommands.THERMAL_SERVICE) ?: return null
+        if (!res.ok || res.stdout.isEmpty()) return null
+
+        val text = res.stdout.joinToString("\n")
+        val targetText = if (text.contains("Current temperatures from HAL:")) {
+            text.substringAfter("Current temperatures from HAL:")
+                .substringBefore("Current cooling devices from HAL:")
+                .substringBefore("Temperature static thresholds")
+        } else {
+            text
+        }
+
+        val matcher = THERMAL_SERVICE_PATTERN.matcher(targetText)
+        val cpuTemps = mutableListOf<Double>()
+        val gpuTemps = mutableListOf<Double>()
+        val batTemps = mutableListOf<Double>()
+        val skinTemps = mutableListOf<Double>()
+        val socTemps = mutableListOf<Double>()
+
+        while (matcher.find()) {
+            val v = matcher.group(1)?.toDoubleOrNull() ?: continue
+            val type = matcher.group(2)?.toIntOrNull() ?: -1
+            val name = (matcher.group(3) ?: "").trim().lowercase()
+            val status = matcher.group(4)?.toIntOrNull() ?: 0
+
+            if (status == 4 || v !in 20.0..115.0) continue
+            if (isExcludedZone(name)) continue
+
+            when {
+                type == TYPE_CPU || name.contains("cpu") || name.contains("gold") || name.contains("silver") || name.contains("kryo") -> cpuTemps.add(v)
+                type == TYPE_GPU || name.contains("gpu") || name.contains("gpuss") -> gpuTemps.add(v)
+                type == TYPE_BATTERY || name.contains("battery") || name.contains("batt") -> batTemps.add(v)
+                type == TYPE_SKIN || name.contains("skin") || name.contains("quiet") -> skinTemps.add(v)
+                type == TYPE_SOC || type == TYPE_SOC_AIDL || name.contains("soc") || name.contains("ap") -> socTemps.add(v)
+            }
+        }
+
+        val cpu = cpuTemps.maxOrNull() ?: socTemps.maxOrNull()
+        val gpu = gpuTemps.maxOrNull()
+        val bat = batTemps.firstOrNull()
+        val skin = skinTemps.maxOrNull()
+
+        if (cpu == null && gpu == null && bat == null && skin == null) return null
+        return HwTemps(cpu = cpu, gpu = gpu, device = skin, battery = bat)
+    }
+
     private fun matchZone(zones: List<Zone>, keywords: List<String>): Metric<Double> {
-        // Pick the hottest matching zone; on phones many "cpu" zones exist per cluster.
         val matches = zones.filter { z -> keywords.any { z.type.contains(it) } }
         return matches.maxByOrNull { it.tempC }
             ?.let { Metric.Available(it.tempC) }
@@ -83,10 +173,6 @@ class ThermalMonitor(private val context: Context) {
             a != null -> Metric.Available(a)
             else -> b
         }
-
-    private data class HwTemps(
-        val cpu: Double?, val gpu: Double?, val device: Double?, val battery: Double?,
-    )
 
     /**
      * Best-effort official API. Returns null on any failure, including the usual

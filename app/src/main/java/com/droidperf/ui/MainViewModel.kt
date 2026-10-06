@@ -1,4 +1,4 @@
-﻿package com.droidperf.ui
+package com.droidperf.ui
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -33,7 +33,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun refreshCapabilities() {
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.IO) {
             metrics.refreshCapabilities()
             metrics.sample(includeNetwork = false, includeLatency = false)
         }
@@ -41,7 +41,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun startUiSampling() {
         if (sampleJob?.isActive == true) return
-        sampleJob = viewModelScope.launch(Dispatchers.Default) {
+        sampleJob = viewModelScope.launch(Dispatchers.IO) {
             while (isActive) {
                 // Only sample if the overlay service is not already sampling
                 if (!config.value.enabled) {
@@ -67,7 +67,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun socDescription(): String = metrics.socDescription()
     fun hasUsageAccess(): Boolean = metrics.hasUsageAccess()
-    fun gpuVendorName(): String = metrics.gpuVendor().displayName
+    fun gpuVendorName(): String = metrics.gpuModelName().ifBlank { metrics.gpuVendor().displayName }
 
     fun preferredAccessMode(): AccessMode = settings.getPreferredAccessMode()
     fun isRootAvailable(): Boolean = metrics.rootShell().isAvailable()

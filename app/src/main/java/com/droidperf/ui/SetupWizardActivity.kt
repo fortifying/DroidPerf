@@ -1,4 +1,4 @@
-﻿package com.droidperf.ui
+package com.droidperf.ui
 
 import android.content.Intent
 import android.net.Uri
@@ -191,7 +191,6 @@ class SetupWizardActivity : AppCompatActivity() {
         val overlayOk = Permissions.canDrawOverlays(this)
         val usageOk = ServiceLocator.metrics.hasUsageAccess()
 
-        // 1. Root Card Appearance
         val isRootSelected = selectedMode == AccessMode.ROOT
         binding.cardWizardRoot.setBackgroundResource(
             if (isRootSelected) R.drawable.bg_card_selected else R.drawable.bg_card_dark
@@ -225,7 +224,6 @@ class SetupWizardActivity : AppCompatActivity() {
         }
         binding.btnRequestRoot.visibility = if (isRootSelected && !isRooted) View.VISIBLE else View.GONE
 
-        // 2. Shizuku Card Appearance
         val isShizukuSelected = selectedMode == AccessMode.SHIZUKU
         binding.cardWizardShizuku.setBackgroundResource(
             if (isShizukuSelected) R.drawable.bg_card_selected else R.drawable.bg_card_dark
@@ -267,7 +265,6 @@ class SetupWizardActivity : AppCompatActivity() {
             else -> "Shizuku is not installed. Install it from the Play Store or choose Root above."
         }
 
-        // 3. System Permissions
         binding.btnGrantOverlay.visibility = if (overlayOk) View.GONE else View.VISIBLE
         binding.iconOverlayDone.visibility = if (overlayOk) View.VISIBLE else View.GONE
         binding.textOverlayStatus.text = if (overlayOk) "Granted" else "Permission required"
@@ -278,7 +275,6 @@ class SetupWizardActivity : AppCompatActivity() {
         binding.textUsageStatus.text = if (usageOk) "Granted" else "Permission required"
         binding.textUsageStatus.setTextColor(getColor(if (usageOk) R.color.accent_green else R.color.warn))
 
-        // 4. Validation and Bottom Button State
         val isPrivilegedReady = when (selectedMode) {
             AccessMode.ROOT -> isRooted
             AccessMode.SHIZUKU -> shizukuOk

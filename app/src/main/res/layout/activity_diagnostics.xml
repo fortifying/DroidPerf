@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/surface"
@@ -110,9 +111,9 @@
                         android:id="@+id/diagDevice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Xiaomi POCO F5"
                         android:textColor="@color/on_surface_muted"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        tools:text="Device" />
                 </LinearLayout>
 
                 <!-- SoC -->
@@ -134,9 +135,9 @@
                         android:id="@+id/diagSoc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Qualcomm Snapdragon 7+ Gen 2"
                         android:textColor="@color/on_surface_muted"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        tools:text="SoC" />
                 </LinearLayout>
 
                 <!-- GPU -->
@@ -158,9 +159,9 @@
                         android:id="@+id/diagGpu"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Adreno 725"
                         android:textColor="@color/on_surface_muted"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        tools:text="GPU" />
                 </LinearLayout>
 
                 <!-- RAM -->
@@ -182,9 +183,9 @@
                         android:id="@+id/diagRam"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="8 GB"
                         android:textColor="@color/on_surface_muted"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        tools:text="RAM" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -450,9 +451,9 @@
                         android:id="@+id/diagGpuSource"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Adreno (perf)"
                         android:textColor="@color/on_surface_muted"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        tools:text="GPU (perf)" />
                 </LinearLayout>
 
                 <!-- RAM source -->

@@ -1,4 +1,4 @@
-﻿package com.droidperf.system.shell
+package com.droidperf.system.shell
 
 import com.droidperf.domain.AccessLevel
 import com.topjohnwu.superuser.Shell as LibsuShell
@@ -26,17 +26,11 @@ class RootShell : Shell {
             )
             if (paths.any { java.io.File(it).exists() }) return true
             val pathEnv = System.getenv("PATH")
-            if (pathEnv?.split(":")?.any { java.io.File(it, "su").exists() } == true) return true
-            if (try { ProcessBuilder("su", "-v").start().waitFor() == 0 } catch (_: Throwable) { false }) return true
-            return try {
-                val p = ProcessBuilder("which", "su").start()
-                p.waitFor() == 0
-            } catch (_: Throwable) {
-                false
-            }
+            return pathEnv?.split(":")?.any { java.io.File(it, "su").exists() } == true
         }
 
         fun getRootMethod(): String {
+            if (!hasSuBinary()) return "None"
             return try {
                 val p = ProcessBuilder("su", "-v").redirectErrorStream(true).start()
                 val line = p.inputStream.bufferedReader().readLine()?.trim() ?: ""
@@ -46,11 +40,10 @@ class RootShell : Shell {
                     line.contains("APatch", ignoreCase = true) -> "APatch ($line)"
                     line.contains("MAGISK", ignoreCase = true) -> "Magisk ($line)"
                     line.isNotEmpty() -> "Superuser ($line)"
-                    hasSuBinary() -> "su binary detected"
-                    else -> "None"
+                    else -> "su binary detected"
                 }
             } catch (_: Throwable) {
-                if (hasSuBinary()) "su binary detected" else "None"
+                "su binary detected"
             }
         }
     }
@@ -62,6 +55,10 @@ class RootShell : Shell {
 
     override fun isAvailable(): Boolean {
         available?.let { return it }
+        if (!hasSuBinary()) {
+            available = false
+            return false
+        }
         val cached = LibsuShell.getCachedShell()
         if (cached != null && cached.isRoot) {
             available = true
@@ -96,13 +93,17 @@ class RootShell : Shell {
     }
 
     fun testRoot(): Boolean {
+        if (!hasSuBinary()) {
+            available = false
+            return false
+        }
         return try {
             val p = ProcessBuilder("su", "-c", "id").redirectErrorStream(true).start()
             val output = p.inputStream.bufferedReader().use { it.readText() }
             val exitCode = p.waitFor()
             val isRoot = exitCode == 0 && output.contains("uid=0")
+            available = isRoot
             if (isRoot) {
-                available = true
                 try {
                     if (LibsuShell.getCachedShell() == null) {
                         LibsuShell.getShell()
@@ -111,6 +112,7 @@ class RootShell : Shell {
             }
             isRoot
         } catch (_: Throwable) {
+            available = false
             false
         }
     }

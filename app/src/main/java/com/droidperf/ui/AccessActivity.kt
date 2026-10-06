@@ -1,4 +1,4 @@
-﻿package com.droidperf.ui
+package com.droidperf.ui
 
 import android.content.Intent
 import android.os.Bundle
@@ -159,7 +159,6 @@ class AccessActivity : AppCompatActivity() {
         val shizukuBinderAlive = shizuku.isBinderAvailable()
         val shizukuInstalled = shizuku.isInstalled()
 
-        // 1. Root Card Appearance
         val isRootSelected = preferredMode == AccessMode.ROOT
         binding.cardModeRoot.setBackgroundResource(
             if (isRootSelected) R.drawable.bg_card_selected else R.drawable.bg_card_dark
@@ -193,7 +192,6 @@ class AccessActivity : AppCompatActivity() {
         }
         binding.btnRequestRoot.visibility = if (isRootSelected && !isRooted) View.VISIBLE else View.GONE
 
-        // 2. Shizuku Card Appearance
         val isShizukuSelected = preferredMode == AccessMode.SHIZUKU
         binding.cardModeShizuku.setBackgroundResource(
             if (isShizukuSelected) R.drawable.bg_card_selected else R.drawable.bg_card_dark
@@ -235,7 +233,6 @@ class AccessActivity : AppCompatActivity() {
             else -> "Install Shizuku & View Guide"
         }
 
-        // 3. System Permissions
         // Overlay
         binding.accessOverlayStatus.text = if (overlayOk) "Granted" else "Permission required"
         binding.accessOverlayStatus.setTextColor(
@@ -252,7 +249,6 @@ class AccessActivity : AppCompatActivity() {
         binding.accessUsageIcon.visibility = if (usageOk) View.VISIBLE else View.GONE
         binding.btnGrantUsage.visibility = if (usageOk) View.GONE else View.VISIBLE
 
-        // 4. Bottom Status Banner
         val isPreferredActive = when (preferredMode) {
             AccessMode.ROOT -> isRooted
             AccessMode.SHIZUKU -> shizukuOk
